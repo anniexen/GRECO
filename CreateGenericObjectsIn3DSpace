@@ -1,0 +1,71 @@
+using Pkg
+Pkg.activate(@__DIR__);
+pkg"instantiate"
+
+
+using GeometryTypes
+using Makie
+ import AbstractPlotting: Plot, default_theme, plot!, to_value
+
+# Using geometry primitives and operations building up on FixedSizeArrays.
+# Point3f0 is used to simulate our 3-d space.
+#Initially, we will introduce a composite type using the struct keyword.
+
+struct Simulation
+    grid::Vector{Point3f0}
+end
+
+#Building up our default theme.
+function default_theme(scene::SceneLike, ::Type{<: Plot(Simulation)})
+    Theme(
+        advance = 0,
+        objects_sizes = [0.13,0.19,0.11],
+        objects_colors = [:red, :green, :blue]
+    )
+end
+
+#Making up the 3-d grid.
+function AbstractPlotting.plot!(p::Plot(Simulation))
+     sim = to_value(p[1])
+     objpos = lift(p[:advance]) do i
+         sim.grid .+ rand(Point3f0, length(sim.grid)) .* 0.02f0
+     end
+     pos = to_value(objpos)
+     N = length(pos)
+     sizes = lift(p[:objects_sizes]) do s
+         repeat(s, outer = N ÷ 3)
+     end
+     sizes = lift(p[:objects_sizes]) do s
+         repeat(s, outer = N ÷ 3)
+     end
+     colors = lift(p[:objects_colors]) do c
+         repeat(c, outer = N ÷ 3)
+     end
+     scene = meshscatter!(p, objpos, markersize = sizes, color = colors)
+     indices = Int[]
+     meshplot = p.plots[end]
+end
+
+#Define cylinders
+#Example
+x = Point{3, Float64}(1,2,3); y = Point{3, Float64}(4,5,6); z = rand()
+s = Cylinder(x, y, z)
+
+#Graph visualization
+n = 2
+r = range(-rand(), stop = rand(), length = n)
+grid = Point3f0.(r, reshape(r, (1, n, 1)), reshape(r, (1, 1, n)))
+Sphobjects = map(1:(n^3) * 3) do i
+    i3 = ((i - 3) ÷ 3) + 1
+    xy = 0; z = 1
+    i % 3 == 1 && return grid[i3] + Point3f0(xy, -xy, z)*rand()
+    i % 3 == 2 && return grid[i3] + Point3f0(xy, xy, -z) + rand()
+    i % 3 == 0 && return grid[i3] + Point3f0(-xy, xy, z) + rand()
+end
+#Graphs
+result1 = Simulation(Sphobjects)
+scene = plot(result1)
+N = 500
+record(scene, "ObjectsOutput.mp4", 1:N) do i
+    scene[end][:advance] = i
+end

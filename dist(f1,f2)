@@ -1,0 +1,8 @@
+# The dist(f1,f2) function returns a real number corresponding to Euclidean
+# distances between the frames f1 and f2.
+
+#The input of the frames will be in the form of a 4x4 homogeneous matrixes.
+
+function d = dist(f1,f2)
+    d = sqrt((f1(1)-f2(1))^2 + (f1(2)-f2(2))^2 + (f1(3)-f2(3))^2)
+end
